@@ -35,10 +35,16 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Install Playwright
+    - name: Install Playwright and allure
       run: |
         npx playwright install --with-deps
         npm install allure-playwright --save-dev
+    - name: Install Allure Commandline
+      if: always()
+      run: |
+        # Install Allure command line tool
+        sudo apt-get update
+        sudo apt-get install -y allure
       
     - name: Run Tests
       run: npx playwright test --project=regression  --reporter=line,allure-playwright
