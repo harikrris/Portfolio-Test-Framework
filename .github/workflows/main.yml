@@ -52,10 +52,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y allure
 
-    - name: Generate Allure Report
+    - name: Generate Allure Report using Action
+      if: always()
+      uses: simple-elf/allure-report-action@v1.7
+      with:
+        allure_results: allure-results
+        allure_report: allure-report
+        gh_pages: false
+
+    - name: Create Zip for Email
       if: always()
       run: |
-        allure generate ./allure-results --clean
+        zip -r allure-report.zip allure-report/
         
     - name: Upload Allure Report
       if: always()
@@ -105,4 +113,4 @@ jobs:
           Run ID: ${{ github.run_id }}
           Commit: ${{ github.event.client_payload.portfolio_commit || 'N/A' }}
         attachments: |
-          allure-report/
+          allure-report.zip
