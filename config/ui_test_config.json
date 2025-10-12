@@ -1,0 +1,14 @@
+{
+  "baseUrl": "https://harikrris.github.io/Portfolio/",
+  "sections": ["Home", "About", "Experience", "Skills", "Projects", "Contact"],
+  "resumeLink": "assets/resume.pdf",
+  "expectedHeadings": {
+    "home": "Sri Hari Krishnan",
+    "about": "About Me",
+    "experience": "Experience",
+    "skills": "Technical Skills",
+    "projects": "Projects",
+    "contact": "Contact"
+  },
+"expectedSummaryText": "I'm a passionate Software Development Engineer in Test with 2+ years of experience in software testing,"
+}
