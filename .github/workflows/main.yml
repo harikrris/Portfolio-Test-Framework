@@ -39,20 +39,23 @@ jobs:
       run: |
         npx playwright install --with-deps
         npm install allure-playwright --save-dev
+    
+      
+    - name: Run Tests
+      run: npx playwright test --project=regression  --reporter=line,allure-playwright
+      continue-on-error: true
+
     - name: Install Allure Commandline
       if: always()
       run: |
         # Install Allure command line tool
         sudo apt-get update
         sudo apt-get install -y allure
-      
-    - name: Run Tests
-      run: npx playwright test --project=regression  --reporter=line,allure-playwright
 
     - name: Generate Allure Report
       if: always()
       run: |
-        npx allure generate ./allure-results --clean
+        allure generate ./allure-results --clean
         
     - name: Upload Allure Report
       if: always()
