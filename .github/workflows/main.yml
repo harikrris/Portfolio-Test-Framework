@@ -1,0 +1,99 @@
+name: Portfolio Automation Tests
+on:
+  # Trigger 1: When portfolio repo is updated
+  repository_dispatch:
+    types: [portfolio-updated]
+      # Trigger 2: When test framework itself is updated
+  push:
+    branches: [main, master]
+    paths:
+      - 'tests/**'
+      - 'src/**'
+      - 'package.json'
+      - 'playwright.config.ts'
+      # Trigger 3: On pull requests to test framework
+  pull_request:
+    branches: [main, master]
+  # Trigger 4: Manual trigger
+  workflow_dispatch:
+
+jobs:
+  run-tests:
+    name: Run Portfolio Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - name: Checkout Test Framework
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Playwright
+      run: |
+        npx playwright install --with-deps
+        npm install allure-playwright --save-dev
+      
+    - name: Run Tests
+      run: npx playwright test --project=regression  --reporter=line,allure-playwright
+
+    - name: Generate Allure Report
+      if: always()
+      run: |
+        npx allure generate ./allure-results --clean
+        
+    - name: Upload Allure Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-report
+        path: allure-report/
+        retention-days: 30
+
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          test-results/
+          playwright-report/
+
+    - name: Send Email with Allure Report
+      if: always()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "Portfolio Test Results - ${{ job.status }} - $(date +'%Y-%m-%d %H:%M')"
+        to: ${{ secrets.NOTIFICATION_EMAIL }}
+        from: GitHub Actions
+        body: |
+          Portfolio Automation Test Execution Complete
+          
+          📊 Test Status: ${{ job.status }}
+          🕒 Triggered: ${{ github.event.client_payload.portfolio_commit_message || 'Manual run' }}
+          🔗 Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          📈 Allure Report is attached with detailed test results including:
+          - Test execution trends
+          - Failure details with screenshots
+          - Environment information
+          - Step-by-step test execution
+          
+          You can also view the HTML report in the GitHub Actions artifacts.
+          
+          ---
+          Repository: ${{ github.repository }}
+          Run ID: ${{ github.run_id }}
+          Commit: ${{ github.event.client_payload.portfolio_commit || 'N/A' }}
+        attachments: |
+          allure-report/
