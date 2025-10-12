@@ -17,9 +17,17 @@ export default defineConfig({
   reporter: [['html', {outputFolder: 'playwright-report'}], 
   ['allure-playwright']],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+
+    // CI-specific settings
+  ...(process.env.CI ? {
+    workers: 2,
+    timeout: 60000,
+    expect: { timeout: 15000 },
+  } : {}),
+
   use: {
     browserName: 'chromium',
-    headless: false,
+    headless: process.env.CI ? true : false,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
 
