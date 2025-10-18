@@ -1,9 +1,7 @@
 name: Portfolio Automation Tests
 on:
-  # Trigger 1: When portfolio repo is updated
   repository_dispatch:
     types: [portfolio-updated]
-      # Trigger 2: When test framework itself is updated
   push:
     branches: [main, master]
     paths:
@@ -11,10 +9,8 @@ on:
       - 'src/**'
       - 'package.json'
       - 'playwright.config.ts'
-      # Trigger 3: On pull requests to test framework
   pull_request:
     branches: [main, master]
-  # Trigger 4: Manual trigger
   workflow_dispatch:
 
 jobs:
@@ -35,36 +31,29 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Install Playwright and allure
+    - name: Install Playwright
+      run: npx playwright install --with-deps
+      
+    - name: Install Allure dependencies
       run: |
-        npx playwright install --with-deps
-        npm install allure-playwright --save-dev
-    
+        npm install allure-playwright
+        
+    - name: Install Allure Commandline
+      run: |
+        sudo apt-get update
+        sudo apt-get install default-jre -y
+        wget -q https://github.com/allure-framework/allure2/releases/download/2.24.1/allure-2.24.1.tgz
+        sudo tar -zxvf allure-2.24.1.tgz -C /opt/
+        sudo ln -sf /opt/allure-2.24.1/bin/allure /usr/bin/allure
       
     - name: Run Tests
-      run: npx playwright test --project=regression  --reporter=line,allure-playwright
-      continue-on-error: true
-
-    - name: Install Allure Commandline
+      run: npx playwright test --project=regression
+      
+    - name: Generate Allure Report
       if: always()
       run: |
-        # Install Allure command line tool
-        sudo apt-get update
-        sudo apt-get install -y allure
-
-    - name: Generate Allure Report using Action
-      if: always()
-      uses: simple-elf/allure-report-action@v1.7
-      with:
-        allure_results: allure-results
-        allure_report: allure-report
-        gh_pages: false
-
-    - name: Create Zip for Email
-      if: always()
-      run: |
-        zip -r allure-report.zip allure-report/
-        
+        allure generate allure-results --clean -o allure-report --single-file
+      
     - name: Upload Allure Report
       if: always()
       uses: actions/upload-artifact@v4
@@ -72,15 +61,6 @@ jobs:
         name: allure-report
         path: allure-report/
         retention-days: 30
-
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: |
-          test-results/
-          playwright-report/
 
     - name: Send Email Report
       if: always()
@@ -96,3 +76,5 @@ jobs:
         body: |
           Test execution completed. View detailed reports at:
           ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          Download the Allure report from the Artifacts section.
