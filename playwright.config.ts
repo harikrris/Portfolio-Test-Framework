@@ -32,7 +32,7 @@ export default defineConfig({
 
   use: {
     browserName: 'chromium',
-    headless: process.env.CI ? true : false,
+    headless: true,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
 
